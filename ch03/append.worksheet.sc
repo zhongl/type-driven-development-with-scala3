@@ -57,7 +57,7 @@ xs ++ `[]`
 xs ++ xs
 
 // Copy from https://github.com/milessabin/strangeloop-2013/blob/master/src/main/scala/strangeloop/vect.scala#L55
-trait Concat[A, XS, YS]:
+sealed trait Concat[A, XS, YS]:
   type Sum <: Int
   type Out = Vect[Sum, A]
   def apply(xs: XS, ys: YS): Out
