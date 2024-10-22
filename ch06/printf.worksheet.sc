@@ -1,4 +1,3 @@
-
 object Printf:
   import scala.compiletime.ops.string.*
 
@@ -18,21 +17,21 @@ object Printf:
 
   given tuple[T <: Tuple]: Result[T] with
     type Out = T => String
-    def apply(pattern: String): Out = t => pattern.formatted(t.toArray*)  
-
-  type Split[S <: String] <: (Char, String) = S match
-    case _ => (CharAt[S, 0], Substring[S, 1, Length[S]])
+    def apply(pattern: String): Out = t => pattern.formatted(t.toArray*)
 
   type Args[S <: String] <: Tuple = Length[S] match
     case 0 | 1 => EmptyTuple
     case _ =>
-      Split[S] match
+      Read[S] match
         case ('%', t) =>
-          Split[t] match
+          Read[t] match
             case ('d', tt) => Int *: Args[tt]
             case ('s', tt) => String *: Args[tt]
-            case (_, tt)   => String *: Args[tt]
+            case (_, tt)   => Args[tt]
         case (_, t) => Args[t]
+
+  type Read[S <: String] <: (Char, String) = S match
+    case _ => (CharAt[S, 0], Substring[S, 1, Length[S]])
 
 end Printf
 
