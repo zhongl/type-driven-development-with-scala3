@@ -10,16 +10,16 @@ object Printf:
     def apply(pattern: String): Out
 
   given string: Result[EmptyTuple] with
-    type Out = String
-    def apply(pattern: String): Out = pattern
+    type Out = Unit
+    def apply(pattern: String): Out = print(pattern)
 
   given func[A]: Result[A *: EmptyTuple] with
-    type Out = A => String
-    def apply(pattern: String): Out = a => pattern.formatted(a)
+    type Out = A => Unit
+    def apply(pattern: String): Out = a => print(pattern.formatted(a))
 
   given tuple[T <: Tuple]: Result[T] with
-    type Out = T => String
-    def apply(pattern: String): Out = t => pattern.formatted(t.toArray*)
+    type Out = T => Unit
+    def apply(pattern: String): Out = t => print(pattern.formatted(t.toArray*))
 
   type Args[S <: String] <: Tuple = Length[S] match
     case 0 | 1 => EmptyTuple
