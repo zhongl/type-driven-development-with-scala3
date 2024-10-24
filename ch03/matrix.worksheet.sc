@@ -21,13 +21,13 @@ object Vect:
 
   type Dim[A] <: Int = A match
     case Vect[?, a] => S[Dim[a]]
-    case Any        => 0
+    case _          => 0
 
   opaque type Show[D <: Int, -A] = A => String
   object Show:
-    given nil[D <: Int, A]: Show[D, Vect[0, A]]     = _ => "[]"
-    given cons[N <: Int, A]: Show[0, Vect[S[N], A]] = _.seq().mkString("[", ", ", "]")
-    given nest[D <: Int, N <: Int, A](using f: Show[D, A], t: Tab[S[D]]): Show[S[D], Vect[S[N], A]] =
+    given zero[D <: Int, A]: Show[D, Vect[0, A]]   = _ => "[]"
+    given one[N <: Int, A]: Show[0, Vect[S[N], A]] = _.seq().mkString("[", ", ", "]")
+    given more[D <: Int, N <: Int, A](using f: Show[D, A], t: Tab[S[D]]): Show[S[D], Vect[S[N], A]] =
       _.seq().map(f).mkString(s"${t.ac}[\n${t.de}", s"\n${t.de}", s"\n${t.ac}]")
   end Show
 
