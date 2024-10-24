@@ -24,22 +24,18 @@ object Vect:
     case Any        => 0
 
   opaque type Show[D <: Int, -A] = A => String
-  given nil[D <: Int, A]: Show[D, Vect[0, A]]     = _ => "[]"
-  given cons[N <: Int, A]: Show[0, Vect[S[N], A]] = _.seq().mkString("[", ", ", "]")
-  given nest[D <: Int, N <: Int, A](using f: Show[D, A], t: Tab[S[D]]): Show[S[D], Vect[S[N], A]] =
-    _.seq().map(f).mkString(s"${t.ac}[\n${t.de}", s"\n${t.de}", s"\n${t.ac}]")
+  object Show:
+    given nil[D <: Int, A]: Show[D, Vect[0, A]]     = _ => "[]"
+    given cons[N <: Int, A]: Show[0, Vect[S[N], A]] = _.seq().mkString("[", ", ", "]")
+    given nest[D <: Int, N <: Int, A](using f: Show[D, A], t: Tab[S[D]]): Show[S[D], Vect[S[N], A]] =
+      _.seq().map(f).mkString(s"${t.ac}[\n${t.de}", s"\n${t.de}", s"\n${t.ac}]")
+  end Show
 
-  sealed trait Tab[N <: Int]:
-    inline val ws = "  "
-    def ac: String
-    def de: String
+  final case class Tab[N <: Int](ac: String, de: String)
   object Tab:
-    given Tab[1] with
-      def ac = ""
-      def de = ws
-    given [N <: Int](using n: Tab[N]): Tab[S[N]] with
-      def ac = ws + n.ac
-      def de = ws + n.de
+    inline val ws                                = "  "
+    given Tab[1]                                 = Tab("", ws)
+    given [N <: Int](using n: Tab[N]): Tab[S[N]] = Tab(ws + n.ac, ws + n.de)
 
   type Matrix[R <: Int, C <: Int, A] = Vect[R, Vect[C, A]]
   extension [R <: Int, C <: Int, A](mat: Matrix[R, C, A])
@@ -51,7 +47,7 @@ object Vect:
     given [C <: Int: Repeat, A]: Transpose[0, C, A]               = _ => Repeat(`[]`)
     given [R <: Int, C <: Int, A](using Transpose[R, C, A], Piece[R, C, A]): Transpose[S[R], C, A] =
       case x :: xs => Piece(x, Transpose(xs))
-      case _       => ???
+      case ignore  => ???
 
     opaque type Piece[R <: Int, C <: Int, A] = (Vect[C, A], Matrix[C, R, A]) => Matrix[C, S[R], A]
     object Piece:
