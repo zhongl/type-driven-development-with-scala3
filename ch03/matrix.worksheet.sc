@@ -1,6 +1,6 @@
 import scala.annotation.tailrec
 import scala.compiletime.constValue
-import scala.compiletime.ops.int.{-, S}
+import scala.compiletime.ops.int.S
 import scala.compiletime.summonFrom
 
 enum Vect[N <: Int, +A]:
@@ -11,47 +11,39 @@ enum Vect[N <: Int, +A]:
 end Vect
 
 object Vect:
+  extension [N <: Int, A](xs: Vect[N, A])
+    @tailrec
+    def seq(acc: Seq[A] = Seq()): Seq[A] = xs match
+      case `[]`   => acc
+      case h :: t => t.seq(acc :+ h)
+
+    def show(using f: Show[Dim[A], Vect[N, A]]) = f(xs)
 
   type Dim[A] <: Int = A match
     case Vect[?, a] => S[Dim[a]]
-    case _          => 0
+    case Any        => 0
 
-  trait Show[-A]:
-    def apply(a: A): String
-  object Show:
-    def apply[A](a: A)(using f: Show[A]) = f(a)
+  opaque type Show[D <: Int, -A] = A => String
+  given nil[D <: Int, A]: Show[D, Vect[0, A]]     = _ => "[]"
+  given cons[N <: Int, A]: Show[0, Vect[S[N], A]] = _.seq().mkString("[", ", ", "]")
+  given nest[D <: Int, N <: Int, A](using f: Show[D, A], t: Tab[S[D]]): Show[S[D], Vect[S[N], A]] =
+    _.seq().map(f).mkString(s"${t.ac}[\n${t.de}", s"\n${t.de}", s"\n${t.ac}]")
 
-  given nil[A]: Show[Vect[0, A]] with
-    def apply(a: Vect[0, A]): String = "[]"
-  given cons[N <: Int, A](using MkString[Dim[A], A]): Show[Vect[N, A]] with
-    def apply(a: Vect[N, A]): String =
-      @tailrec
-      def rec(xs: Vect[?, A], acc: Seq[A]): String = xs match
-        case `[]`   => MkString(acc)
-        case h :: t => rec(t, acc :+ h)
+  sealed trait Tab[N <: Int]:
+    inline val ws = "  "
+    def ac: String
+    def de: String
+  object Tab:
+    given Tab[1] with
+      def ac = ""
+      def de = ws
+    given [N <: Int](using n: Tab[N]): Tab[S[N]] with
+      def ac = ws + n.ac
+      def de = ws + n.de
 
-      rec(a, Seq.empty)
-
-  opaque type MkString[I <: Int, A] = Seq[A] => String
-  object MkString:
-    def apply[I <: Int, A](using f: MkString[I, A]) = f
-
-    inline val tab = "  "
-
-    inline given [I <: Int, A]: MkString[I, A] = inline constValue[I] match
-      case 0 => _.mkString("[", ", ", "]")
-      case n => indent[I, A](tab * (n - 1), tab * n)
-
-    inline def indent[I <: Int, A](ac: String, de: String): MkString[I, A] = summonFrom:
-      case _: Show[A] => _.map(Show[A]).mkString(s"$ac[\n$de", s"\n$de", s"\n$ac]")
-  end MkString
-
-  opaque type Repeat[N <: Int] = [A] => A => Vect[N, A]
-  object Repeat:
-    def apply[N <: Int, A](using f: Repeat[N])(a: A) = f(a)
-    given Repeat[0]                                  = [A] => _ => `[]`
-    given [N <: Int: Repeat]: Repeat[S[N]]           = [A] => a => a :: Repeat(a)
-  end Repeat
+  type Matrix[R <: Int, C <: Int, A] = Vect[R, Vect[C, A]]
+  extension [R <: Int, C <: Int, A](mat: Matrix[R, C, A])
+    def transpose(using Transpose[R, C, A]): Matrix[C, R, A] = Transpose(mat)
 
   opaque type Transpose[R <: Int, C <: Int, A] = Matrix[R, C, A] => Matrix[C, R, A]
   object Transpose:
@@ -70,11 +62,13 @@ object Vect:
     end Piece
   end Transpose
 
-  extension [N <: Int, A](xs: Vect[N, A]) def show(using Show[Vect[N, A]]) = Show(xs)
+  opaque type Repeat[N <: Int] = [A] => A => Vect[N, A]
+  object Repeat:
+    def apply[N <: Int, A](using f: Repeat[N])(a: A) = f(a)
+    given Repeat[0]                                  = [A] => _ => `[]`
+    given [N <: Int: Repeat]: Repeat[S[N]]           = [A] => a => a :: Repeat(a)
+  end Repeat
 
-  type Matrix[R <: Int, C <: Int, A] = Vect[R, Vect[C, A]]
-  extension [R <: Int, C <: Int, A](mat: Matrix[R, C, A])
-    def transpose(using Transpose[R, C, A]): Matrix[C, R, A] = Transpose(mat)
 end Vect
 
 import Vect.*
