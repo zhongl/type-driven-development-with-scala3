@@ -2,8 +2,8 @@ import scala.annotation.tailrec
 import scala.compiletime.ops.int.S
 
 enum Vect[N <: Int, +A]:
-  case `[]`                                                       extends Vect[0, Nothing]
-  case ::[N <: Int, +A] private[Vect] (head: A, tail: Vect[N, A]) extends Vect[S[N], A]
+  case `[]`                                                  extends Vect[0, Nothing]
+  case ::[N <: Int, +A] private[Vect] (x: A, xs: Vect[N, A]) extends Vect[S[N], A]
 
   def ::[B >: A](b: B) = new ::(b, this)
 end Vect
