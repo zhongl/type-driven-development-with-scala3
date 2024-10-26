@@ -1,5 +1,6 @@
 import scala.annotation.tailrec
 import scala.compiletime.ops.int.S
+import scala.util.NotGiven
 
 enum Vect[N <: Int, +A]:
   case `[]`                                                  extends Vect[0, Nothing]
@@ -12,48 +13,30 @@ object Vect:
   extension [N <: Int, A](xs: Vect[N, A])
     @tailrec
     def seq(acc: Seq[A] = Seq()): Seq[A] = xs match
-      case `[]`   => acc
-      case h :: t => t.seq(acc :+ h)
+      case `[]`     => acc
+      case x :: xxs => xxs.seq(acc :+ x)
 
-    def show(using f: Show[Dim[A], Vect[N, A]]) = f(xs)
+    def show(using f: Show[Vect[N, A]]) = f(xs, Pad("  "))
 
     def zip[B, C](ys: Vect[N, B], f: (A, B) => C): Vect[N, C] = (xs, ys) match
       case (`[]`, `[]`)         => `[]`
       case (x :: xxs, y :: yys) => f(x, y) :: xxs.zip(yys, f)
   end extension
 
-  enum Nat[N <: Int]:
-    case Zero                      extends Nat[0]
-    case Succ[N <: Int](n: Nat[N]) extends Nat[S[N]]
-
-    lazy val value: Int =
-      @tailrec
-      def rec(n: Nat[?], r: Int): Int = n match
-        case Zero    => r
-        case Succ(n) => rec(n, 1 + r)
-
-      rec(this, 0)
-  end Nat
-
-  object Nat:
-    given Nat[0]                                 = Zero
-    given [N <: Int](using n: Nat[N]): Nat[S[N]] = Succ(n)
-
-  type Dim[A] <: Int = A match
-    case Vect[?, a] => S[Dim[a]]
-    case _          => 0
-
-  opaque type Show[D <: Int, -A] = A => String
+  opaque type Show[-A] = (A, Pad) => String
   object Show:
-    given zero[D <: Int, A]: Show[D, Vect[0, A]] = _ => "[]"
-    given one[N <: Int, A]: Show[0, Vect[N, A]]  = _.seq().mkString("[", ", ", "]")
-    given more[D <: Int, N <: Int, A](using f: Show[D, A], n: Nat[S[D]]): Show[S[D], Vect[S[N], A]] =
-      val i   = n.value
-      val tab = "  "
-      val de  = tab * i
-      val ac  = tab * (i - 1)
-      _.seq().map(f).mkString(s"${ac}[\n${de}", s"\n${de}", s"\n${ac}]")
+    given [A]: Show[Vect[0, A]] = (_, p) => s"$p[]"
+
+    given leaf[N <: Int, A](using NotGiven[Show[A]]): Show[Vect[N, A]] =
+      (xs, p) => xs.seq().mkString(s"$p[", ", ", "]")
+
+    given branche[N <: Int, A <: Vect[?, ?]](using f: Show[A]): Show[Vect[N, A]] =
+      (xs, p) => xs.seq().map(f(_, p.inc)).mkString(s"$p[\n", s"\n$p", s"\n$p]")
   end Show
+  class Pad private (base: String, count: Int):
+    def this(base: String) = this(base, 0)
+    def inc                         = Pad(base, count + 1)
+    override def toString(): String = base * count
 
   type Mat[R <: Int, C <: Int, A] = Vect[R, Vect[C, A]]
   extension [R <: Int, C <: Int, A](mat: Mat[R, C, A])
@@ -67,13 +50,21 @@ object Vect:
   def fill[N <: Int](using n: Nat[N]): [A] => A => Vect[N, A] = n match
     case Nat.Zero    => [A] => _ => `[]`
     case Nat.Succ(n) => [A] => a => a :: fill(using n)(a)
+
+  enum Nat[N <: Int]:
+    case Zero                      extends Nat[0]
+    case Succ[N <: Int](n: Nat[N]) extends Nat[S[N]]
+  end Nat
+  object Nat:
+    given Nat[0]                                 = Zero
+    given [N <: Int](using n: Nat[N]): Nat[S[N]] = Succ(n)
 end Vect
 
 import Vect.*
 
 `[]`.show
 
-(1 :: `[]`).show
+(1 :: 2 :: `[]`).show
 
 val mat: Mat[3, 2, Int] = (1 :: 2 :: `[]`)
   :: (3 :: 4 :: `[]`)
@@ -82,3 +73,7 @@ val mat: Mat[3, 2, Int] = (1 :: 2 :: `[]`)
 mat.show
 
 mat.trans.show
+
+val v = 1 :: `[]`
+
+((v :: `[]`) :: `[]`).show
