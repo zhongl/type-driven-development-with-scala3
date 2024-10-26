@@ -25,12 +25,12 @@ object Vect:
 
   opaque type Show[-A] = (A, Pad) => String
   object Show:
-    given [A]: Show[Vect[0, A]] = (_, p) => s"$p[]"
+    given Show[Vect[0, ?]] = (_, p) => s"$p[]"
 
-    given leaf[N <: Int, A](using NotGiven[Show[A]]): Show[Vect[N, A]] =
+    given leaf[A](using NotGiven[Show[A]]): Show[Vect[?, A]] =
       (xs, p) => xs.seq().mkString(s"$p[", ", ", "]")
 
-    given branche[N <: Int, A <: Vect[?, ?]](using f: Show[A]): Show[Vect[N, A]] =
+    given branche[A <: Vect[?, ?]](using f: Show[A]): Show[Vect[?, A]] =
       (xs, p) => xs.seq().map(f(_, p.inc)).mkString(s"$p[\n", s"\n$p", s"\n$p]")
   end Show
   class Pad private (base: String, count: Int):
