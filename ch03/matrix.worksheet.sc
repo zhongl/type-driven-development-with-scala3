@@ -17,6 +17,11 @@ object Vect:
 
     def show(using f: Show[Dim[A], Vect[N, A]]) = f(xs)
 
+    def zip[B, C](ys: Vect[N, B], f: (A, B) => C): Vect[N, C] = (xs, ys) match
+      case (`[]`, `[]`)         => `[]`
+      case (x :: xxs, y :: yys) => f(x, y) :: xxs.zip(yys, f)
+  end extension
+
   enum Nat[N <: Int]:
     case Zero                      extends Nat[0]
     case Succ[N <: Int](n: Nat[N]) extends Nat[S[N]]
@@ -40,8 +45,8 @@ object Vect:
 
   opaque type Show[D <: Int, -A] = A => String
   object Show:
-    given zero[D <: Int, A]: Show[D, Vect[0, A]]   = _ => "[]"
-    given one[N <: Int, A]: Show[0, Vect[N, A]] = _.seq().mkString("[", ", ", "]")
+    given zero[D <: Int, A]: Show[D, Vect[0, A]] = _ => "[]"
+    given one[N <: Int, A]: Show[0, Vect[N, A]]  = _.seq().mkString("[", ", ", "]")
     given more[D <: Int, N <: Int, A](using f: Show[D, A], n: Nat[S[D]]): Show[S[D], Vect[S[N], A]] =
       val i   = n.value
       val tab = "  "
@@ -53,15 +58,9 @@ object Vect:
   type Mat[R <: Int, C <: Int, A] = Vect[R, Vect[C, A]]
   extension [R <: Int, C <: Int, A](mat: Mat[R, C, A])
     def trans: Nat[C] ?=> Mat[C, R, A] =
-
-      def zip[R <: Int, C <: Int, A]: (Vect[C, A], Mat[C, R, A]) => Mat[C, S[R], A] =
-        case (`[]`, `[]`)       => `[]`
-        case (x :: xs, y :: ys) => (x :: y) :: zip(xs, ys)
-
       mat match
         case `[]`    => fill[C](`[]`)
-        case x :: xs => zip(x, xs.trans)
-
+        case x :: xs => x.zip(xs.trans, _ :: _)
     end trans
   end extension
 
