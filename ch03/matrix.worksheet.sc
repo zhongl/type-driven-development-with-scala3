@@ -16,7 +16,7 @@ object Vect:
       case `[]`     => acc
       case x :: xxs => xxs.seq(acc :+ x)
 
-    def show(using f: Show[Vect[N, A]]) = f(xs, Pad("  "))
+    def show(using f: Show[Vect[N, A]]) = f(xs, Pad(2))
 
     def zip[B, C](ys: Vect[N, B], f: (A, B) => C): Vect[N, C] = (xs, ys) match
       case (`[]`, `[]`)         => `[]`
@@ -29,11 +29,11 @@ object Vect:
     given branche[A <: Vect[?, ?]](using f: Show[A]): Show[Vect[?, A]] =
       (xs, p) => xs.seq().map(f(_, p.inc)).mkString(s"$p[\n", s"\n$p", s"\n$p]")
   end Show
-  
-  class Pad private (base: String, count: Int):
-    def this(base: String) = this(base, 0)
-    def inc                         = Pad(base, count + 1)
-    override def toString(): String = base * count
+
+  final class Pad private (size: Int, count: Int):
+    def this(size: Int) = this(size, 0)
+    def inc                         = Pad(size, count + 1)
+    override def toString(): String = " " * (size * count)
 
   type Mat[R <: Int, C <: Int, A] = Vect[R, Vect[C, A]]
   extension [R <: Int, C <: Int, A](mat: Mat[R, C, A])
