@@ -20,33 +20,24 @@ end Vect
 
 import Vect.*
 
-sealed trait Prop[A, M <: Int, N <: Int]:
-  extension (xs: Vect[M, A]) def concat(ys: Vect[N, A]): Vect[M + N, A]
-object Prop:
+opaque type Append[A, M <: Int, N <: Int] = (Vect[M, A], Vect[N, A]) => Vect[M + N, A]
+object Append:
   import scala.language.implicitConversions
-
   given [A, B](using A =:= B): Conversion[A, B] = _.asInstanceOf
 
-  type Eq1[A, N <: Int] = Vect[N, A] =:= Vect[0 + N, A]
+  type Ev1[A, N <: Int] = Vect[N, A] =:= Vect[0 + N, A]
+  given nil[A, N <: Int](using Ev1[A, N]): Append[A, 0, N] = (_, ys) => ys
 
-  given nil[A, N <: Int](using Eq1[A, N]): Prop[A, 0, N] with
-    extension (xs: Vect[0, A]) def concat(ys: Vect[N, A]): Vect[0 + N, A] = ys
-  end nil
+  type Ev2[A, M <: Int, N <: Int] = Vect[S[M + N], A] =:= Vect[S[M] + N, A]
+  given cons[A, M <: Int, N <: Int](using f: Append[A, M, N], e: Ev2[A, M, N]): Append[A, S[M], N] =
+    case (x :: xs, ys) => x :: f(xs, ys)
 
-  type Eq2[A, M <: Int, N <: Int] = Vect[S[M + N], A] =:= Vect[S[M] + N, A]
-
-  given cons[A, M <: Int, N <: Int](using Prop[A, M, N], Eq2[A, M, N]): Prop[A, S[M], N] with
-    extension (xs: Vect[S[M], A])
-      def concat(ys: Vect[N, A]): Vect[S[M] + N, A] = (xs: @unchecked) match
-        case h :: t => h :: t.concat(ys)
-  end cons
-
-  given instance[A, M <: Int, N <: Int](using Prop[A, M, N]): ++[Vect[M, A], Vect[N, A]] with
+  given instance[A, M <: Int, N <: Int](using f: Append[A, M, N]): ++[Vect[M, A], Vect[N, A]] with
     type Out = Vect[M + N, A]
-    def apply(xs: Vect[M, A], ys: Vect[N, A]): Out = xs.concat(ys)
-end Prop
+    def apply(xs: Vect[M, A], ys: Vect[N, A]): Out = f(xs, ys)
+end Append
 
-import Prop.given
+import Append.given
 
 val xs = 1 :: `[]`
 
