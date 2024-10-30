@@ -1,5 +1,3 @@
-//> using scala 3.5.2-RC1
-
 import scala.compiletime.ops.int.*
 
 enum Vect[N <: Int, +A]:
@@ -20,20 +18,18 @@ end Vect
 
 import Vect.*
 
-opaque type Append[A, M <: Int, N <: Int] = (Vect[M, A], Vect[N, A]) => Vect[M + N, A]
+opaque type Append[M <: Int, N <: Int, O <: Int, A] = (Vect[M, A], Vect[N, A]) => Vect[O, A]
 object Append:
-  import scala.language.implicitConversions
-  given [A, B](using A =:= B): Conversion[A, B] = _.asInstanceOf
-
-  type Ev1[A, N <: Int] = Vect[N, A] =:= Vect[0 + N, A]
-  given nil[A, N <: Int](using Ev1[A, N]): Append[A, 0, N] = (_, ys) => ys
-
-  type Ev2[A, M <: Int, N <: Int] = Vect[S[M + N], A] =:= Vect[S[M] + N, A]
-  given cons[A, M <: Int, N <: Int](using f: Append[A, M, N], e: Ev2[A, M, N]): Append[A, S[M], N] =
+  given nil[N <: Int, A]: Append[0, N, N, A] = (_, ys) => ys
+  given cons[M <: Int, N <: Int, O <: Int, A](using
+    f: Append[M, N, O, A]
+  ): Append[S[M], N, S[O], A] =
     case (x :: xs, ys) => x :: f(xs, ys)
 
-  given instance[A, M <: Int, N <: Int](using f: Append[A, M, N]): ++[Vect[M, A], Vect[N, A]] with
-    type Out = Vect[M + N, A]
+  given instance[M <: Int, N <: Int, O <: Int, A](using
+    f: Append[M, N, O, A]
+  ): ++[Vect[M, A], Vect[N, A]] with
+    type Out = Vect[O, A]
     def apply(xs: Vect[M, A], ys: Vect[N, A]): Out = f(xs, ys)
 end Append
 
@@ -43,7 +39,7 @@ val xs = 1 :: `[]`
 
 xs ++ `[]`
 
-(`[]` ++ xs) //(using summon[++[Int, 0, S[0]]]) not working blow v3.5.2-RC1
+(`[]` ++ xs)
 
 xs ++ xs
 
