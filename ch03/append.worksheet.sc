@@ -13,15 +13,18 @@ object Vect:
     def apply(xs: XS, ys: YS): Out
 
   extension [A, N <: Int](xs: Vect[N, A])
-    def ++[B >: A, M <: Int](ys: Vect[M, B])(using f: ++[Vect[N, B], Vect[M, B]]): f.Out = f(xs, ys)
+    def ++[B >: A, M <: Int](ys: Vect[M, B])(using
+      f: ++[Vect[N, B], Vect[M, B]]
+    ): f.Out = f(xs, ys)
 end Vect
 
 import Vect.*
 
-opaque type Append[M <: Int, N <: Int, O <: Int, A] = (Vect[M, A], Vect[N, A]) => Vect[O, A]
+opaque type Append[M <: Int, N <: Int, O <: Int, A] =
+  (Vect[M, A], Vect[N, A]) => Vect[O, A]
 object Append:
-  given nil[N <: Int, A]: Append[0, N, N, A] = (_, ys) => ys
-  given cons[M <: Int, N <: Int, O <: Int, A](using
+  given [N <: Int, A]: Append[0, N, N, A] = (_, ys) => ys
+  given [M <: Int, N <: Int, O <: Int, A](using
     f: Append[M, N, O, A]
   ): Append[S[M], N, S[O], A] =
     case (x :: xs, ys) => x :: f(xs, ys)
@@ -59,11 +62,14 @@ object Concat:
     cc: Concat[A, Vect[M, A], Vect[N, A]]
   ): Concat[A, Vect[S[M], A], Vect[N, A]] with
     type Sum = S[cc.Sum]
-    def apply(xs: Vect[S[M], A], ys: Vect[N, A]): Out = (xs: @unchecked) match
-      case h :: t => h :: (cc(t, ys))
+    def apply(xs: Vect[S[M], A], ys: Vect[N, A]): Out =
+      (xs: @unchecked) match
+        case h :: t => h :: (cc(t, ys))
   end cons
 
-  given instance[A, M <: Int, N <: Int](using cc: Concat[A, Vect[M, A], Vect[N, A]]): ++[Vect[M, A], Vect[N, A]] with
+  given instance[A, M <: Int, N <: Int](using
+    cc: Concat[A, Vect[M, A], Vect[N, A]]
+  ): ++[Vect[M, A], Vect[N, A]] with
     type Out = cc.Out
     def apply(xs: Vect[M, A], ys: Vect[N, A]): Out = cc(xs, ys)
 end Concat
