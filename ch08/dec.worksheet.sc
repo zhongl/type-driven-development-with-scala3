@@ -3,6 +3,7 @@ enum Dec[A]:
   case No[A](contra: A => Nothing) extends Dec[A]
 object Dec:
   import scala.compiletime.summonFrom
+  
   inline def apply[A]: Dec[A] = summonFrom:
     case a: A => Yes(a)
     case _    => No(contra)
@@ -12,10 +13,10 @@ object Dec:
     override def toString(): String = "contra"
 end Dec
 
-enum `=`[-A, +B]:
-  case Refl extends `=`[Any, Nothing]
+enum `=`[A, B]:
+  case Refl[A]() extends `=`[A, A]
 object `=`:
-  given [A, B](using A =:= B): `=`[A, B] = Refl
+  given [A]: `=`[A, A] = Refl()
 
 summon[1 `=` 1]
 
