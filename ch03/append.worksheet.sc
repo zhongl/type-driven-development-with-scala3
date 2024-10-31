@@ -11,10 +11,6 @@ object Vect:
   opaque type Concat[M <: Int, N <: Int, O <: Int, A] =
     (Vect[M, A], Vect[N, A]) => Vect[O, A]
   object Concat:
-    def apply[M <: Int, N <: Int, O <: Int, A](
-      f: (Vect[M, A], Vect[N, A]) => Vect[O, A]
-    ): Concat[M, N, O, A] = f
-
     given [N <: Int, A]: Concat[0, N, N, A] = (_, ys) => ys
     given [M <: Int, N <: Int, O <: Int, A](using
       f: Concat[M, N, O, A]
@@ -61,10 +57,10 @@ object miles:
     end cons
   end Concat
 
-  given concat[A, M <: Int, N <: Int](using
+  def concat[A, M <: Int, N <: Int](xs: Vect[M, A], ys: Vect[N, A])(using
     cc: Concat[A, Vect[M, A], Vect[N, A]]
-  ): Vect.Concat[M, N, cc.Sum, A] = Vect.Concat(cc(_, _))
+  ) = cc(xs, ys)
 
 end miles
 
-(xs ++ xs)(using miles.concat)
+miles.concat(xs, xs)
