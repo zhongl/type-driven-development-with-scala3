@@ -66,6 +66,9 @@ end miles
 miles.concat(xs, xs)
 
 object idris:
+  // TODO after "Path-dependent GADT reasoning" merged
+  // sealed trait +[M <: Int, N <: Int]:
+  //   type O <: Int  
   enum Plus[M <: Int, N <: Int, O <: Int]:
     case Done[N <: Int]()                                     extends Plus[0, N, N]
     case Cont[M <: Int, N <: Int, O <: Int](p: Plus[M, N, O]) extends Plus[S[M], N, S[O]]
