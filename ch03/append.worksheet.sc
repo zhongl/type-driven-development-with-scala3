@@ -64,3 +64,21 @@ object miles:
 end miles
 
 miles.concat(xs, xs)
+
+object idris:
+  enum Plus[M <: Int, N <: Int, O <: Int]:
+    case Done[N <: Int]()                                     extends Plus[0, N, N]
+    case Cont[M <: Int, N <: Int, O <: Int](p: Plus[M, N, O]) extends Plus[S[M], N, S[O]]
+  object Plus:
+    given done[N <: Int]: Plus[0, N, N]                                                   = Done()
+    given cont[M <: Int, N <: Int, O <: Int](using p: Plus[M, N, O]): Plus[S[M], N, S[O]] = Cont(p)
+
+  import Plus.*
+
+  def concat[A, M <: Int, N <: Int, O <: Int]: (Vect[M, A], Vect[N, A]) => Plus[M, N, O] ?=> Vect[O, A] =
+    (a, b) =>
+      (a, b, summon[Plus[M, N, O]]) match
+        case (`[]`, ys, Done())                       => ys
+        case (x :: xs, ys, Cont(given Plus[m, n, o])) => x :: concat(xs, ys)
+
+idris.concat(xs, xs)
