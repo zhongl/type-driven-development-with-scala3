@@ -66,9 +66,19 @@ end miles
 miles.concat(xs, xs)
 
 object idris:
-  // TODO after "Path-dependent GADT reasoning" merged
-  // sealed trait +[M <: Int, N <: Int]:
-  //   type O <: Int  
+  // TODO Path-dependent GADT reasoning
+  // sealed infix trait Plus[M <: Int, N <: Int]:
+  //   type O <: Int
+  // object Plus:
+  //   final case class Done[N <: Int]() extends Plus[0, N]:
+  //     type O = N
+  //   final case class Cont[M <: Int, N <: Int](p: M Plus N) extends Plus[S[M], N]:
+  //     type O = S[p.O]
+
+  //   given done[N <: Int]: Plus[0, N]                                 = Done()
+  //   given cont[M <: Int, N <: Int](using p: M Plus N): Plus[S[M], N] = Cont(p)
+  // end Plus
+
   enum Plus[M <: Int, N <: Int, O <: Int]:
     case Done[N <: Int]()                                     extends Plus[0, N, N]
     case Cont[M <: Int, N <: Int, O <: Int](p: Plus[M, N, O]) extends Plus[S[M], N, S[O]]
@@ -77,6 +87,13 @@ object idris:
     given cont[M <: Int, N <: Int, O <: Int](using p: Plus[M, N, O]): Plus[S[M], N, S[O]] = Cont(p)
 
   import Plus.*
+
+  // TODO
+  // def concat[A, M <: Int, N <: Int]: (Vect[M, A], Vect[N, A]) => (p: M Plus N) ?=> Vect[p.O, A] =
+  //   (a, b) =>
+  //     (a, b, p) match
+  //       case (`[]`, ys, Done())                    => ys
+  //       case (x :: xs, ys, Cont(given (m Plus n))) => x :: concat(xs, ys)
 
   def concat[A, M <: Int, N <: Int, O <: Int]: (Vect[M, A], Vect[N, A]) => Plus[M, N, O] ?=> Vect[O, A] =
     (a, b) =>
