@@ -80,11 +80,11 @@ object idris:
   // end Plus
 
   enum Plus[M <: Int, N <: Int, O <: Int]:
-    case Done[N <: Int]()                                     extends Plus[0, N, N]
-    case Cont[M <: Int, N <: Int, O <: Int](p: Plus[M, N, O]) extends Plus[S[M], N, S[O]]
+    case Done[N <: Int]()                               extends Plus[0, N, N]
+    case Cont[M <: Int, N <: Int](p: Plus[M, N, M + N]) extends Plus[S[M], N, S[M + N]]
   object Plus:
-    given done[N <: Int]: Plus[0, N, N]                                                   = Done()
-    given cont[M <: Int, N <: Int, O <: Int](using p: Plus[M, N, O]): Plus[S[M], N, S[O]] = Cont(p)
+    given done[N <: Int]: Plus[0, N, N]                                                 = Done()
+    given cont[M <: Int, N <: Int](using p: Plus[M, N, M + N]): Plus[S[M], N, S[M + N]] = Cont(p)
 
   import Plus.*
 
