@@ -33,21 +33,18 @@ enum Nat[N <: Int]:
   case Succ[N <: Int](n: Nat[N]) extends Nat[S[N]]
 end Nat
 object Nat:
-  given Nat[0]                                 = Zero
-  given [N <: Int](using n: Nat[N]): Nat[S[N]] = Succ(n)
-
   extension [M <: Int](m: Nat[M])
-    def `=`[N <: Int](n: Nat[N]): Dec[M `=` N] =
+    def =?[N <: Int](n: Nat[N]): Dec[M `=` N] =
       (m, n) match
         case (Zero, Zero) => Yes(Refl())
         case (Zero, _)    => No(contra)
         case (_, Zero)    => No(contra)
         case (Succ(m), Succ(n)) =>
-          m `=` n match
+          m `=?` n match
             case No(_)       => No(contra)
             case Yes(Refl()) => Yes(Refl())
 end Nat
 import Nat.* 
 
-Zero `=` summon[Nat[0]]
-Zero `=` summon[Nat[1]]
+Zero =? Zero
+Zero =? Succ(Zero)
