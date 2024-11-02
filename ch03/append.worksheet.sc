@@ -8,19 +8,19 @@ enum Vect[N <: Int, +A]:
 end Vect
 
 object Vect:
-  opaque type Concat[M <: Int, N <: Int, O <: Int, A] =
-    (Vect[M, A], Vect[N, A]) => Vect[O, A]
-  object Concat:
-    given [N <: Int, A]: Concat[0, N, N, A] = (_, ys) => ys
-    given [M <: Int, N <: Int, O <: Int, A](using
-      f: Concat[M, N, O, A]
-    ): Concat[S[M], N, S[O], A] =
-      case (x :: xs, ys) => x :: f(xs, ys)
-  end Concat
+
+  type Aux[A]                                                 = [N <: Int] =>> Vect[N, A]
+  opaque type Plus[F[_ <: Int], M <: Int, N <: Int, O <: Int] = (F[M], F[N]) => F[O]
+  
+  given [N <: Int, A]: Plus[Aux[A], 0, N, N] = (_, ys) => ys
+  given [M <: Int, N <: Int, O <: Int, A](using
+    f: Plus[Aux[A], M, N, O]
+  ): Plus[Aux[A], S[M], N, S[O]] =
+    case (x :: xs, ys) => x :: f(xs, ys)
 
   extension [A, N <: Int](xs: Vect[N, A])
     def ++[B >: A, M <: Int, O <: Int](ys: Vect[M, B])(using
-      f: Concat[N, M, O, B]
+      f: Plus[Aux[B], N, M, O]
     ) = f(xs, ys)
 end Vect
 
@@ -100,5 +100,6 @@ object idris:
       (a, b, summon[Plus[M, N, O]]) match
         case (`[]`, ys, Done())                       => ys
         case (x :: xs, ys, Cont(given Plus[m, n, o])) => x :: concat(xs, ys)
+end idris
 
 idris.concat(xs, xs)
