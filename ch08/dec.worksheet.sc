@@ -33,18 +33,20 @@ enum Nat[N <: Int]:
   case Succ[N <: Int](n: Nat[N]) extends Nat[S[N]]
 end Nat
 object Nat:
-  extension [M <: Int](m: Nat[M])
-    def =?[N <: Int](n: Nat[N]): Dec[M `=` N] =
-      (m, n) match
-        case (Zero, Zero) => Yes(Refl())
-        case (Zero, _)    => No(contra)
-        case (_, Zero)    => No(contra)
-        case (Succ(m), Succ(n)) =>
-          m `=?` n match
-            case No(_)       => No(contra)
-            case Yes(Refl()) => Yes(Refl())
+  extension [M <: Int](m: Nat[M]) inline def =?[N <: Int](n: Nat[N]): Dec[M `=` N] = check(m, n).result
+
+  import scala.util.control.TailCalls.*
+  private def check[M <: Int, N <: Int]: (Nat[M], Nat[N]) => TailRec[Dec[M `=` N]] =
+    case (Zero, Zero) => done(Yes(Refl()))
+    case (Zero, _)    => done(No(contra))
+    case (_, Zero)    => done(No(contra))
+    case (Succ(m), Succ(n)) =>
+      tailcall(check(m, n)).map:
+        case No(_)       => No(contra)
+        case Yes(Refl()) => Yes(Refl())
+
 end Nat
-import Nat.* 
+import Nat.*
 
 Zero =? Zero
 Zero =? Succ(Zero)
