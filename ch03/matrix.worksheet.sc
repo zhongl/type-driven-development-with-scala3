@@ -39,14 +39,14 @@ object Vect:
   extension [R <: Int, C <: Int, A](mat: Mat[R, C, A])
     def trans: Nat[C] ?=> Mat[C, R, A] =
       mat match
-        case `[]`    => fill[C](`[]`)
+        case `[]`    => fill(`[]`)
         case x :: xs => x.zip(xs.trans, _ :: _)
     end trans
   end extension
 
-  def fill[N <: Int](using n: Nat[N]): [A] => A => Vect[N, A] = n match
-    case Nat.Zero    => [A] => _ => `[]`
-    case Nat.Succ(n) => [A] => a => a :: fill(using n)(a)
+  def fill[N <: Int, A](a: A)(using n: Nat[N]): Vect[N, A] = n match
+    case Nat.Zero               => `[]`
+    case Nat.Succ(given Nat[?]) => a :: fill(a)
 
   enum Nat[N <: Int]:
     case Zero                      extends Nat[0]
