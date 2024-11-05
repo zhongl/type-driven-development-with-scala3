@@ -1,4 +1,3 @@
-//> using scala 3.5.1
 
 object Printf:
   import scala.compiletime.ops.string.*
