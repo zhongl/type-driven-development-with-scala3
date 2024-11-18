@@ -1,4 +1,4 @@
-import scala.compiletime.ops.int.*
+import scala.compiletime.ops.int.S
 
 enum Vect[N <: Int, +A]:
   case `[]`                                   extends Vect[0, Nothing]
@@ -8,20 +8,24 @@ enum Vect[N <: Int, +A]:
 end Vect
 
 object Vect:
+  type +[M <: Int, N <: Int] <: Int = M match
+    case 0    => N
+    case S[m] => m + S[N]
 
   type Aux[A]                                                 = [N <: Int] =>> Vect[N, A]
   opaque type Plus[F[_ <: Int], M <: Int, N <: Int, O <: Int] = (F[M], F[N]) => F[O]
-  
+
   given [N <: Int, A]: Plus[Aux[A], 0, N, N] = (_, ys) => ys
-  given [M <: Int, N <: Int, O <: Int, A](using
-    f: Plus[Aux[A], M, N, O]
-  ): Plus[Aux[A], S[M], N, S[O]] =
+  given [M <: Int, N <: Int, A](using
+    f: Plus[Aux[A], M, N, M + N]
+  ): Plus[Aux[A], S[M], N, S[M + N]] =
     case (x :: xs, ys) => x :: f(xs, ys)
 
   extension [A, N <: Int](xs: Vect[N, A])
-    def ++[B >: A, M <: Int, O <: Int](ys: Vect[M, B])(using
-      f: Plus[Aux[B], N, M, O]
-    ) = f(xs, ys)
+    def ++[B >: A, M <: Int](ys: Vect[M, B])(using
+      f: Plus[Aux[B], N, M, M + N]
+    ): Vect[M + N, B] = f(xs, ys)
+
 end Vect
 
 import Vect.*
