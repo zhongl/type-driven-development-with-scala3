@@ -2,36 +2,39 @@ import scala.annotation.implicitNotFound
 import scala.compiletime.ops.int.S
 
 enum Vect[N <: Int, +A]:
-  case `[]`                                                                  extends Vect[0, Nothing]
-  case ::[N <: Int, +A, H <: A, T <: Vect[N, A]] private[Vect] (x: H, xs: T) extends Vect[S[N], A]
+  case `[]`                                                                    extends Vect[0, Nothing]
+  case ::[N <: Int, +A, +H <: A, +T <: Vect[N, A]] private[Vect] (x: H, xs: T) extends Vect[S[N], A]
 
   def ::[X >: A](x: X) = new ::[N, X, x.type, this.type](x, this)
 
 object Vect:
-  extension [N <: Int, A, XS <: ::[N, A, ?, ?]](xs: XS)
-    def -(x: A)(using f: Remove[N, A, x.type, XS]): Vect[N, A] = f(xs)
+  extension [N <: Int, A, XXS <: Vect[S[N], A], XS <: Vect[N, A]](xs: XXS)
+    def -(x: A)(using f: Remove[N, x.type, XXS, XS]): XS = f(xs)
 
   @implicitNotFound("Can't remove element from the vect does't contain")
-  opaque type Remove[N <: Int, A, X <: A, -XS <: Vect[S[N], A]] = XS => Vect[N, A]
+  opaque type Remove[N <: Int, X, -XXS <: Vect[S[N], ?], +XS <: Vect[N, ?]] = XXS => XS
   object Remove:
-    given [A, N <: Int, X <: A]: Remove[N, A, X, ::[N, A, X, ?]] =
+    given here[A, N <: Int, X <: A, XS <: Vect[N, A]]: Remove[N, X, ::[N, A, X, XS], XS] =
       case _ :: xs => xs
 
-    given [A, N <: Int, X <: A, XS <: Vect[S[N], A], YS <: ::[S[N], A, ?, XS]](using
-      f: Remove[N, A, X, XS]
-    ): Remove[S[N], A, X, YS] =
+    given threre[A, N <: Int, X <: A, Y <: A, XS <: Vect[N, A], YS <: Vect[S[N], A]](using
+      f: Remove[N, X, YS, XS]
+    ): Remove[S[N], X, ::[S[N], A, Y, YS], ::[N, A, Y, XS]] =
       case x :: xs => x :: f(xs)
+  end Remove
 
 end Vect
 
 import Vect.*
 
-val v1 = 1 :: `[]`
+val v1 = 2 :: 1 :: `[]`
 
-v1 - 1
+v1 - 2 - 1
 
-//v1 - 2
+v1 - 1 // - 2 // error
 
-(3 :: 2 :: v1) - 1
+val v2 = 3 :: v1
+
+v2 - 1
 
 ("a" :: `[]`) - "a"
