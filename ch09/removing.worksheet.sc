@@ -38,3 +38,37 @@ val v2 = 3 :: v1
 v2 - 1
 
 ("a" :: `[]`) - "a"
+
+object Idris:
+  enum Elem[N <: Int, A, X <: A, +XS <: Vect[S[N], A]]:
+    case Here[N <: Int, A, X <: A, XS <: Vect[N, A]]() extends Elem[N, A, X, ::[N, A, X, XS]]
+    case There[N <: Int, A, X <: A, Y <: A, XS <: Vect[S[N], A]](
+      later: Elem[N, A, X, XS]
+    ) extends Elem[S[N], A, X, ::[S[N], A, Y, XS]]
+  object Elem:
+    given here[N <: Int, A, X <: A, XS <: Vect[N, A]]: Elem[N, A, X, ::[N, A, X, XS]] = Here()
+    given there[N <: Int, A, X <: A, Y <: A, XS <: Vect[S[N], A]](using
+      later: Elem[N, A, X, XS]
+    ): Elem[S[N], A, X, ::[S[N], A, Y, XS]] = There(later)
+
+  import Elem.*
+
+  def has[N <: Int, A, XS <: Vect[S[N], A]](x: A, xs: XS)(using
+    e: Elem[N, A, x.type, XS]
+  ): Boolean = true
+
+  def remove[N <: Int, A, XS <: Vect[S[N], A]](x: A, xs: XS)(using
+    e: Elem[N, A, x.type, XS]
+  ): Vect[N, A] = (e, xs) match
+    case (Here(), _ :: ys)            => ys
+    case (There(later), y :: z :: ys) => y :: remove(x, z :: ys)(using later)
+    case _                            => ???
+
+  type Remove[X, XS <: Vect[?, ?]] <: Vect[?, ?] = XS match
+    case ::[?, ?, X, ys]    => ys
+    case ::[S[n], a, y, xs] => ::[n, a, y, Remove[X, xs]]
+end Idris
+
+Idris.has(2, 1 :: 2 :: `[]`)
+
+Idris.remove(1, 1 :: 2 :: `[]`)
