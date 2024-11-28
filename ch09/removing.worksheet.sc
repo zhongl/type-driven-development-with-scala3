@@ -64,11 +64,22 @@ object Idris:
     case (There(later), y :: z :: ys) => y :: remove(x, z :: ys)(using later)
     case _                            => ???
 
-  type Remove[X, XS <: Vect[?, ?]] <: Vect[?, ?] = XS match
-    case ::[?, ?, X, ys]    => ys
-    case ::[S[n], a, y, xs] => ::[n, a, y, Remove[X, xs]]
 end Idris
 
 Idris.has(2, 1 :: 2 :: `[]`)
-
 Idris.remove(1, 1 :: 2 :: `[]`)
+
+object MatchType:
+  type Remove[X, XS <: Vect[?, ?]] <: Vect[?, ?] = XS match
+    case ::[?, ?, X, ys] => ys
+    case ::[n, a, y, xs] =>
+      n match
+        case S[m] => ::[m, a, y, Remove[X, xs]]
+
+  def remove[A, XS <: Vect[?, A]](x: A, xs: XS): Remove[x.type, XS] = xs match
+    case `x` :: ys => ys.asInstanceOf[Remove[x.type, XS]]
+    case y :: ys   => (y :: remove(x, ys)).asInstanceOf[Remove[x.type, XS]]
+    case _         => ???
+end MatchType
+
+MatchType.remove(2, 1 :: 2 :: `[]`)
